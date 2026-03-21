@@ -1,98 +1,161 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Pressable,
+  RefreshControl,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { useState, useCallback } from "react";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useContacts } from "@/src/hooks/useContacts";
+import { ContactCard } from "@/src/components/ContactCard";
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter();
+  const { contacts, loading, refresh } = useContacts();
+  const [refreshing, setRefreshing] = useState(false);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }, [refresh]);
+
+  // Contacts that need attention (urgency score >= 1.0)
+  const needsAttention = contacts.filter((c) => c.urgency.score >= 1.0);
+  // The most urgent contact gets highlighted
+  const topContact = needsAttention.length > 0 ? needsAttention[0] : null;
+
+  const handlePress = (id: string) => {
+    router.push(`/contact/${id}`);
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <FlatList
+        data={needsAttention}
+        keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.greeting}>
+              {getGreeting()}. You've got this.
+            </Text>
+
+            {topContact && topContact.urgency.level === "overdue" && (
+              <View style={styles.banner}>
+                <Text style={styles.bannerText}>
+                  A little while since you talked — {topContact.name} would love
+                  to hear from you.
+                </Text>
+                <Pressable
+                  style={styles.bannerButton}
+                  onPress={() => handlePress(topContact.id)}
+                >
+                  <Text style={styles.bannerButtonText}>Say hi</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {needsAttention.length > 0 && (
+              <Text style={styles.sectionTitle}>Thinking of...</Text>
+            )}
+          </View>
+        }
+        renderItem={({ item, index }) => (
+          <ContactCard
+            contact={item}
+            onPress={handlePress}
+            highlighted={index === 0}
+          />
+        )}
+        ListEmptyComponent={
+          loading ? null : (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>All caught up for now.</Text>
+              <Text style={styles.emptySubtitle}>Enjoy your day.</Text>
+            </View>
+          )
+        }
+        contentContainerStyle={styles.list}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#FAFAFA",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  list: {
+    paddingBottom: 24,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 16,
+  },
+  banner: {
+    backgroundColor: "#FFF3E0",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  bannerText: {
+    fontSize: 15,
+    color: "#5D4037",
+    lineHeight: 22,
+    marginBottom: 12,
+  },
+  bannerButton: {
+    backgroundColor: "#FF8A65",
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  bannerButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#555",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  empty: {
+    alignItems: "center",
+    paddingTop: 80,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#888",
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    color: "#aaa",
+    marginTop: 4,
   },
 });
