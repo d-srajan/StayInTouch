@@ -10,7 +10,13 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dsrajan.stayintouch"
+      "bundleIdentifier": "com.dsrajan.stayintouch",
+      "infoPlist": {
+        "NSUserActivityTypes": [
+          "com.stayintouch.checkIn",
+          "com.stayintouch.logMoment"
+        ]
+      }
     },
     "android": {
       "package": "com.dsrajan.stayintouch",

@@ -20,14 +20,29 @@ function formatDaysSince(days: number): string {
   return `${months} month${months > 1 ? "s" : ""} ago`;
 }
 
+function getA11yHint(contact: ContactWithUrgency): string {
+  if (!contact.lastInteraction) return "Haven't connected yet";
+  return `Last talked ${formatDaysSince(contact.urgency.daysSince)}`;
+}
+
 export function ContactCard({ contact, onPress, highlighted }: ContactCardProps) {
   return (
     <Pressable
       style={[styles.card, highlighted && styles.highlighted]}
       onPress={() => onPress(contact.id)}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${contact.name}. ${getA11yHint(contact)}`}
+      accessibilityHint="Opens contact details"
     >
-      <View style={[styles.avatar, { backgroundColor: contact.color ?? "#ccc" }]}>
-        <Text style={styles.initials}>{contact.initials ?? "?"}</Text>
+      <View
+        style={[styles.avatar, { backgroundColor: contact.color ?? "#ccc" }]}
+        accessible={false}
+        importantForAccessibility="no"
+      >
+        <Text style={styles.initials} importantForAccessibility="no">
+          {contact.initials ?? "?"}
+        </Text>
       </View>
       <View style={styles.info}>
         <View style={styles.nameRow}>

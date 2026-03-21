@@ -7,9 +7,18 @@ const COLORS: Record<UrgencyLevel, string> = {
   overdue: "#EF5350", // coral/red
 };
 
+const A11Y_LABELS: Record<UrgencyLevel, string> = {
+  ok: "Recently in touch",
+  soon: "It's been a little while",
+  overdue: "Would love to hear from you",
+};
+
 export function UrgencyDot({ level, size = 10 }: { level: UrgencyLevel; size?: number }) {
   return (
     <View
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={A11Y_LABELS[level]}
       style={[
         styles.dot,
         {

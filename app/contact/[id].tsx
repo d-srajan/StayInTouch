@@ -116,7 +116,7 @@ export default function ContactDetailScreen() {
           >
             <Text style={styles.initials}>{contact.initials ?? "?"}</Text>
           </View>
-          <Text style={styles.name}>{contact.name}</Text>
+          <Text style={styles.name} accessibilityRole="header">{contact.name}</Text>
           {contact.relationship && (
             <Text style={styles.relationship}>
               {contact.relationship.replace("_", " ")}
@@ -140,12 +140,16 @@ export default function ContactDetailScreen() {
           <Pressable
             style={styles.composeButton}
             onPress={() => router.push(`/compose/${contact.id}`)}
+            accessibilityRole="button"
+            accessibilityLabel={`Say hi to ${contact.name}`}
           >
             <Text style={styles.composeButtonText}>Say hi</Text>
           </Pressable>
           <Pressable
             style={styles.logButton}
             onPress={() => setShowLog(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`Log a moment with ${contact.name}`}
           >
             <Text style={styles.logButtonText}>Log a moment</Text>
           </Pressable>
@@ -216,7 +220,12 @@ export default function ContactDetailScreen() {
         </View>
 
         {/* Delete */}
-        <Pressable style={styles.deleteButton} onPress={handleDelete}>
+        <Pressable
+          style={styles.deleteButton}
+          onPress={handleDelete}
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${contact.name} from your list`}
+        >
           <Text style={styles.deleteText}>Remove contact</Text>
         </Pressable>
       </ScrollView>

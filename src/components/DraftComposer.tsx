@@ -17,16 +17,6 @@ interface DraftComposerProps {
   onSkip: () => void;
 }
 
-function getContextForContact(
-  relationship: string | null,
-  daysSince: number | null
-): string {
-  if (relationship === "family") return "family";
-  if (relationship === "colleague") return "professional";
-  if (daysSince !== null && daysSince > 60) return "long_gap";
-  return "general";
-}
-
 export function DraftComposer({
   contactName,
   relationship,
@@ -71,13 +61,19 @@ export function DraftComposer({
   return (
     <View style={styles.container}>
       {/* Tone picker */}
-      <Text style={styles.label}>Tone</Text>
-      <View style={styles.toneRow}>
+      <Text style={styles.label} accessibilityRole="header">
+        Tone
+      </Text>
+      <View style={styles.toneRow} accessibilityRole="radiogroup">
         {availableTones.map((t) => (
           <Pressable
             key={t.value}
             style={[styles.toneChip, tone === t.value && styles.toneChipActive]}
             onPress={() => handleToneChange(t.value)}
+            accessible
+            accessibilityRole="radio"
+            accessibilityState={{ selected: tone === t.value }}
+            accessibilityLabel={`${t.label} tone`}
           >
             <Text
               style={[
@@ -99,22 +95,46 @@ export function DraftComposer({
           onChangeText={handleEditDraft}
           multiline
           textAlignVertical="top"
+          accessibilityLabel="Message draft"
+          accessibilityHint="Edit the message before sending"
         />
-        <Pressable style={styles.refreshButton} onPress={handleRefresh}>
+        <Pressable
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Try another draft"
+          accessibilityHint="Generates a new message suggestion"
+        >
           <Text style={styles.refreshText}>Try another</Text>
         </Pressable>
       </View>
 
-      <Text style={styles.hint}>
+      <Text
+        style={styles.hint}
+        accessibilityRole="text"
+      >
         A starting point — make it yours. Even "hi" is enough.
       </Text>
 
       {/* Actions */}
-      <Pressable style={styles.sendButton} onPress={() => onSend(draft)}>
+      <Pressable
+        style={styles.sendButton}
+        onPress={() => onSend(draft)}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel="Copy and send message"
+      >
         <Text style={styles.sendText}>Copy & send</Text>
       </Pressable>
 
-      <Pressable style={styles.skipButton} onPress={onSkip}>
+      <Pressable
+        style={styles.skipButton}
+        onPress={onSkip}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel="Skip and write your own message"
+      >
         <Text style={styles.skipText}>I'll write my own</Text>
       </Pressable>
     </View>

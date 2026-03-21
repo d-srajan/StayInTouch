@@ -70,7 +70,12 @@ export default function ContactsScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <Text style={styles.title}>People</Text>
-        <Pressable style={styles.addButton} onPress={() => setShowAdd(true)}>
+        <Pressable
+          style={styles.addButton}
+          onPress={() => setShowAdd(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Add a new contact"
+        >
           <Text style={styles.addButtonText}>+ Add</Text>
         </Pressable>
       </View>
@@ -82,6 +87,8 @@ export default function ContactsScreen() {
           placeholderTextColor="#aaa"
           value={search}
           onChangeText={setSearch}
+          accessibilityLabel="Search contacts"
+          accessibilityHint="Type to filter your contacts list"
         />
       </View>
 

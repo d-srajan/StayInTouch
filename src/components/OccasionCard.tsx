@@ -50,9 +50,20 @@ export function OccasionCard({
       ? `${contactName}'s birthday`
       : occasion.label ?? `${contactName}'s ${occasion.type}`;
 
+  const daysLabel = getDaysLabel(daysUntil);
+
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <Text style={styles.emoji}>{emoji}</Text>
+    <Pressable
+      style={styles.card}
+      onPress={onPress}
+      accessible
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, ${formatOccasionDate(occasion.month, occasion.day)}. ${daysLabel}`}
+      accessibilityHint={onPress ? "Opens contact details" : undefined}
+    >
+      <Text style={styles.emoji} importantForAccessibility="no">
+        {emoji}
+      </Text>
       <View style={styles.info}>
         <Text style={styles.label} numberOfLines={1}>
           {label}
@@ -61,7 +72,7 @@ export function OccasionCard({
       </View>
       <View style={styles.badge}>
         <Text style={[styles.daysText, { color: getDaysColor(daysUntil) }]}>
-          {getDaysLabel(daysUntil)}
+          {daysLabel}
         </Text>
       </View>
     </Pressable>

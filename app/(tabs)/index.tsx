@@ -5,13 +5,15 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  AppState,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 
 import { useContacts } from "@/src/hooks/useContacts";
 import { useOccasions, type OccasionWithContact } from "@/src/hooks/useOccasions";
+import { useOnboarding } from "@/src/hooks/useOnboarding";
 import { ContactCard } from "@/src/components/ContactCard";
 import { OccasionCard } from "@/src/components/OccasionCard";
 import { getUrgencyScore, sortByUrgency } from "@/src/utils/urgency";
@@ -27,7 +29,33 @@ export default function HomeScreen() {
   const router = useRouter();
   const { contacts, loading, refresh } = useContacts();
   const { occasions, refresh: refreshOccasions, getNearestOccasionDays } = useOccasions();
+  const { savePref, getPref } = useOnboarding();
   const [refreshing, setRefreshing] = useState(false);
+  const [showWelcomeBack, setShowWelcomeBack] = useState(false);
+
+  // Weekly summary: count contacts interacted with in last 7 days
+  const weeklySummaryCount = useMemo(() => {
+    return contacts.filter((c) => {
+      if (!c.lastInteraction) return false;
+      return c.urgency.daysSince <= 7;
+    }).length;
+  }, [contacts]);
+
+  // Detect return after absence (spec: "Welcome back. No catching up needed.")
+  useEffect(() => {
+    const lastOpen = getPref("last_app_open");
+    const now = new Date();
+    savePref("last_app_open", now.toISOString());
+
+    if (lastOpen) {
+      const daysSince = Math.floor(
+        (now.getTime() - new Date(lastOpen).getTime()) / 86_400_000
+      );
+      if (daysSince >= 7) {
+        setShowWelcomeBack(true);
+      }
+    }
+  }, [getPref, savePref]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -50,6 +78,7 @@ export default function HomeScreen() {
 
   // Contacts that need attention (urgency score >= 1.0)
   const needsAttention = sorted.filter((c) => c.urgency.score >= 1.0);
+
   const topContact = needsAttention.length > 0 ? needsAttention[0] : null;
 
   // Upcoming occasions within 7 days
@@ -69,13 +98,34 @@ export default function HomeScreen() {
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.greeting}>
+            <Text
+              style={styles.greeting}
+              accessibilityRole="header"
+            >
               {getGreeting()}. You've got this.
             </Text>
 
+            {/* Welcome back after absence */}
+            {showWelcomeBack && (
+              <Pressable
+                style={styles.welcomeBackBanner}
+                onPress={() => setShowWelcomeBack(false)}
+                accessible
+                accessibilityLabel="Welcome back. No catching up needed — just pick one person. Tap to dismiss."
+              >
+                <Text style={styles.welcomeBackText}>
+                  Welcome back. No catching up needed — just pick one person. 💛
+                </Text>
+              </Pressable>
+            )}
+
             {/* Urgency banner */}
             {topContact && topContact.urgency.level === "overdue" && (
-              <View style={styles.banner}>
+              <View
+                style={styles.banner}
+                accessible
+                accessibilityLabel={`A little while since you talked. ${topContact.name} would love to hear from you.`}
+              >
                 <Text style={styles.bannerText}>
                   A little while since you talked — {topContact.name} would love
                   to hear from you.
@@ -83,6 +133,8 @@ export default function HomeScreen() {
                 <Pressable
                   style={styles.bannerButton}
                   onPress={() => router.push(`/compose/${topContact.id}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Say hi to ${topContact.name}`}
                 >
                   <Text style={styles.bannerButtonText}>Say hi</Text>
                 </Pressable>
@@ -104,6 +156,21 @@ export default function HomeScreen() {
               </Pressable>
             ))}
 
+            {/* Weekly summary */}
+            {weeklySummaryCount > 0 && (
+              <View
+                style={styles.weeklySummary}
+                accessible
+                accessibilityLabel={`You reached out to ${weeklySummaryCount} ${weeklySummaryCount === 1 ? "person" : "people"} this week. That's real.`}
+              >
+                <Text style={styles.weeklySummaryText}>
+                  You reached out to {weeklySummaryCount}{" "}
+                  {weeklySummaryCount === 1 ? "person" : "people"} this week.
+                  That's real. ✨
+                </Text>
+              </View>
+            )}
+
             {needsAttention.length > 0 && (
               <Text style={styles.sectionTitle}>Thinking of...</Text>
             )}
@@ -119,7 +186,9 @@ export default function HomeScreen() {
         ListEmptyComponent={
           loading ? null : (
             <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>All caught up for now.</Text>
+              <Text style={styles.emptyTitle} accessibilityRole="header">
+                All caught up for now.
+              </Text>
               <Text style={styles.emptySubtitle}>Enjoy your day.</Text>
             </View>
           )
@@ -148,6 +217,20 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#1a1a1a",
     marginBottom: 16,
+  },
+  welcomeBackBanner: {
+    backgroundColor: "#F0FAFE",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#0a7ea4",
+  },
+  welcomeBackText: {
+    fontSize: 15,
+    color: "#0a7ea4",
+    lineHeight: 22,
+    fontStyle: "italic",
   },
   banner: {
     backgroundColor: "#FFF3E0",
@@ -184,6 +267,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#5D4037",
     lineHeight: 22,
+  },
+  weeklySummary: {
+    backgroundColor: "#E8F5E9",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  weeklySummaryText: {
+    fontSize: 14,
+    color: "#2E7D32",
+    lineHeight: 20,
+    textAlign: "center",
+    fontWeight: "500",
   },
   sectionTitle: {
     fontSize: 17,
