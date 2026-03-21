@@ -9,17 +9,42 @@ const ONBOARDING_KEY = "onboarding_complete";
 // In-memory store for web preview
 let webPrefs: Record<string, string> = {};
 
+// ── Global state shared across all hook instances ──
+let globalIsComplete: boolean | null = null;
+const listeners = new Set<(value: boolean) => void>();
+
+function notifyAll(value: boolean) {
+  globalIsComplete = value;
+  listeners.forEach((fn) => fn(value));
+}
+
 export function useOnboarding() {
-  const [isComplete, setIsComplete] = useState<boolean | null>(null); // null = loading
+  const [isComplete, setIsComplete] = useState<boolean | null>(globalIsComplete);
   const isWeb = Platform.OS === "web";
 
-  const check = useCallback(() => {
+  // Subscribe to global changes
+  useEffect(() => {
+    const handler = (v: boolean) => setIsComplete(v);
+    listeners.add(handler);
+    return () => {
+      listeners.delete(handler);
+    };
+  }, []);
+
+  // Initial check (only runs once globally)
+  useEffect(() => {
+    if (globalIsComplete !== null) {
+      setIsComplete(globalIsComplete);
+      return;
+    }
+
     if (isWeb) {
-      setIsComplete(webPrefs[ONBOARDING_KEY] === "true");
+      const val = webPrefs[ONBOARDING_KEY] === "true";
+      notifyAll(val);
       return;
     }
     if (!db) {
-      setIsComplete(false);
+      notifyAll(false);
       return;
     }
     try {
@@ -28,15 +53,11 @@ export function useOnboarding() {
         .from(userPrefs)
         .where(eq(userPrefs.key, ONBOARDING_KEY))
         .all();
-      setIsComplete(rows.length > 0 && rows[0].value === "true");
+      notifyAll(rows.length > 0 && rows[0].value === "true");
     } catch {
-      setIsComplete(false);
+      notifyAll(false);
     }
   }, [isWeb]);
-
-  useEffect(() => {
-    check();
-  }, [check]);
 
   const completeOnboarding = useCallback(() => {
     if (isWeb) {
@@ -50,7 +71,8 @@ export function useOnboarding() {
         })
         .run();
     }
-    setIsComplete(true);
+    // Notify ALL hook instances (including _layout.tsx)
+    notifyAll(true);
   }, [isWeb]);
 
   const savePref = useCallback(

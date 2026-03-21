@@ -77,11 +77,9 @@ export default function PermissionsScreen() {
         }
       }
 
-      // Mark onboarding as complete
+      // Mark onboarding as complete — the root layout's useEffect
+      // will detect isComplete === true and redirect to /(tabs)
       completeOnboarding();
-
-      // Navigate to main app
-      router.replace("/(tabs)");
     } catch (e) {
       Alert.alert("Something went wrong", "Please try again.");
     } finally {
