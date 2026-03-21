@@ -82,7 +82,7 @@ export default function HomeScreen() {
                 </Text>
                 <Pressable
                   style={styles.bannerButton}
-                  onPress={() => handlePress(topContact.id)}
+                  onPress={() => router.push(`/compose/${topContact.id}`)}
                 >
                   <Text style={styles.bannerButtonText}>Say hi</Text>
                 </Pressable>

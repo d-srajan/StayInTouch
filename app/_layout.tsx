@@ -26,6 +26,10 @@ export default function RootLayout() {
           name="contact/[id]"
           options={{ presentation: "card", title: "" }}
         />
+        <Stack.Screen
+          name="compose/[id]"
+          options={{ presentation: "modal", title: "Compose" }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

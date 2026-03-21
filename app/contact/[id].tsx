@@ -136,12 +136,20 @@ export default function ContactDetailScreen() {
         </View>
 
         {/* Actions */}
-        <Pressable
-          style={styles.logButton}
-          onPress={() => setShowLog(true)}
-        >
-          <Text style={styles.logButtonText}>Log a moment</Text>
-        </Pressable>
+        <View style={styles.actionRow}>
+          <Pressable
+            style={styles.composeButton}
+            onPress={() => router.push(`/compose/${contact.id}`)}
+          >
+            <Text style={styles.composeButtonText}>Say hi</Text>
+          </Pressable>
+          <Pressable
+            style={styles.logButton}
+            onPress={() => setShowLog(true)}
+          >
+            <Text style={styles.logButtonText}>Log a moment</Text>
+          </Pressable>
+        </View>
 
         {/* Contact info */}
         {(contact.phone || contact.email) && (
@@ -305,14 +313,27 @@ const styles = StyleSheet.create({
   statusRow: { flexDirection: "row", alignItems: "center" },
   statusText: { fontSize: 15, color: "#555", flex: 1 },
   thresholdText: { fontSize: 13, color: "#aaa", marginTop: 6, marginLeft: 20 },
-  // Log button
-  logButton: {
-    backgroundColor: "#4ECDC4",
+  // Action buttons
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
     marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  composeButton: {
+    flex: 1,
+    backgroundColor: "#FF8A65",
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
-    marginBottom: 16,
+  },
+  composeButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  logButton: {
+    flex: 1,
+    backgroundColor: "#4ECDC4",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
   },
   logButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
   // Info

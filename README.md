@@ -53,6 +53,13 @@ From there you can:
 - Press `a` to open in an Android Emulator (requires Android Studio)
 - Scan the QR code with [Expo Go](https://expo.dev/go) on your phone
 
+## Download
+
+| Platform | Link |
+|----------|------|
+| Android APK | [Download latest build](https://expo.dev/accounts/d.srajan/projects/StayInTouch/builds/a878ee2f-2c62-4491-92a2-10a954746ec9) |
+| iOS | Coming soon (requires Apple Developer account) |
+
 ## Building Installers
 
 This project uses [EAS Build](https://docs.expo.dev/build/introduction/) for generating native installers.
