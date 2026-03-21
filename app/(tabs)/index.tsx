@@ -8,10 +8,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 import { useContacts } from "@/src/hooks/useContacts";
+import { useOccasions, type OccasionWithContact } from "@/src/hooks/useOccasions";
 import { ContactCard } from "@/src/components/ContactCard";
+import { OccasionCard } from "@/src/components/OccasionCard";
+import { getUrgencyScore, sortByUrgency } from "@/src/utils/urgency";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -23,18 +26,34 @@ function getGreeting(): string {
 export default function HomeScreen() {
   const router = useRouter();
   const { contacts, loading, refresh } = useContacts();
+  const { occasions, refresh: refreshOccasions, getNearestOccasionDays } = useOccasions();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refresh();
+    await Promise.all([refresh(), refreshOccasions()]);
     setRefreshing(false);
-  }, [refresh]);
+  }, [refresh, refreshOccasions]);
+
+  // Re-score contacts with occasion boost
+  const contactsWithOccasionBoost = useMemo(() => {
+    return contacts.map((c) => {
+      const occasionDays = getNearestOccasionDays(c.id);
+      if (occasionDays === null) return c;
+      // Re-compute urgency with occasion boost
+      const urgency = getUrgencyScore(c.lastInteraction, c.thresholdDays, occasionDays);
+      return { ...c, urgency };
+    });
+  }, [contacts, getNearestOccasionDays]);
+
+  const sorted = useMemo(() => sortByUrgency(contactsWithOccasionBoost), [contactsWithOccasionBoost]);
 
   // Contacts that need attention (urgency score >= 1.0)
-  const needsAttention = contacts.filter((c) => c.urgency.score >= 1.0);
-  // The most urgent contact gets highlighted
+  const needsAttention = sorted.filter((c) => c.urgency.score >= 1.0);
   const topContact = needsAttention.length > 0 ? needsAttention[0] : null;
+
+  // Upcoming occasions within 7 days
+  const soonOccasions = occasions.filter((o) => o.daysUntil <= 7);
 
   const handlePress = (id: string) => {
     router.push(`/contact/${id}`);
@@ -54,6 +73,7 @@ export default function HomeScreen() {
               {getGreeting()}. You've got this.
             </Text>
 
+            {/* Urgency banner */}
             {topContact && topContact.urgency.level === "overdue" && (
               <View style={styles.banner}>
                 <Text style={styles.bannerText}>
@@ -68,6 +88,21 @@ export default function HomeScreen() {
                 </Pressable>
               </View>
             )}
+
+            {/* Occasion banners */}
+            {soonOccasions.map((o) => (
+              <Pressable
+                key={o.id}
+                style={styles.occasionBanner}
+                onPress={() => handlePress(o.contactId)}
+              >
+                <Text style={styles.occasionBannerText}>
+                  {o.daysUntil === 0
+                    ? `Today is ${o.contactName}'s ${o.type === "birthday" ? "birthday" : o.label ?? "special day"}! A quick message goes a long way.`
+                    : `${o.contactName}'s ${o.type === "birthday" ? "birthday" : o.label ?? "special day"} is in ${o.daysUntil} day${o.daysUntil > 1 ? "s" : ""} — a quick message goes a long way.`}
+                </Text>
+              </Pressable>
+            ))}
 
             {needsAttention.length > 0 && (
               <Text style={styles.sectionTitle}>Thinking of...</Text>
@@ -136,6 +171,19 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 15,
+  },
+  occasionBanner: {
+    backgroundColor: "#FFF8E1",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: "#FFB74D",
+  },
+  occasionBannerText: {
+    fontSize: 15,
+    color: "#5D4037",
+    lineHeight: 22,
   },
   sectionTitle: {
     fontSize: 17,

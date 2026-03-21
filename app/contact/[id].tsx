@@ -13,7 +13,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useMemo } from "react";
 
 import { useContacts, type ContactWithUrgency } from "@/src/hooks/useContacts";
+import { useOccasions } from "@/src/hooks/useOccasions";
 import { UrgencyDot } from "@/src/components/UrgencyDot";
+import { OccasionCard } from "@/src/components/OccasionCard";
 import type { Interaction } from "@/src/db/schema";
 
 const INTERACTION_TYPES = [
@@ -52,11 +54,16 @@ export default function ContactDetailScreen() {
   const router = useRouter();
   const { contacts, logInteraction, getInteractions, deleteContact } =
     useContacts();
+  const { getOccasionsForContact } = useOccasions();
 
   const contact = contacts.find((c) => c.id === id);
   const history = useMemo(
     () => (id ? getInteractions(id) : []),
     [id, getInteractions, contacts] // re-derive when contacts refresh
+  );
+  const contactOccasions = useMemo(
+    () => (id ? getOccasionsForContact(id) : []),
+    [id, getOccasionsForContact]
   );
 
   const [showLog, setShowLog] = useState(false);
@@ -151,6 +158,21 @@ export default function ContactDetailScreen() {
                 <Text style={styles.infoValue}>{contact.email}</Text>
               </View>
             )}
+          </View>
+        )}
+
+        {/* Occasions */}
+        {contactOccasions.length > 0 && (
+          <View style={styles.occasionsSection}>
+            <Text style={styles.sectionTitle}>Upcoming occasions</Text>
+            {contactOccasions.map((o) => (
+              <OccasionCard
+                key={o.id}
+                occasion={o}
+                contactName={contact.name}
+                daysUntil={o.daysUntil}
+              />
+            ))}
           </View>
         )}
 
@@ -308,6 +330,10 @@ const styles = StyleSheet.create({
   },
   infoLabel: { fontSize: 14, color: "#888" },
   infoValue: { fontSize: 14, color: "#1a1a1a" },
+  // Occasions
+  occasionsSection: {
+    marginBottom: 16,
+  },
   // History
   historySection: {
     marginHorizontal: 16,

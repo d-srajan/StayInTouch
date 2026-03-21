@@ -23,3 +23,14 @@ export async function scheduleOneTimeReminder(
 
 export async function cancelAllReminders(): Promise<void> {}
 export async function cancelReminder(_id: string): Promise<void> {}
+export async function scheduleOccasionReminder(
+  _contactId: string,
+  _contactName: string,
+  _occasionType: string,
+  _month: number,
+  _day: number,
+  _advanceDays: number = 3,
+  _triggerHour: number = 9
+): Promise<string> {
+  return "web-stub";
+}

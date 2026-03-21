@@ -83,3 +83,40 @@ export async function cancelAllReminders(): Promise<void> {
 export async function cancelReminder(id: string): Promise<void> {
   await Notifications.cancelScheduledNotificationAsync(id);
 }
+
+/**
+ * Schedule an advance reminder for an occasion (birthday, anniversary, etc).
+ * Fires `advanceDays` before the occasion date at 9 AM.
+ */
+export async function scheduleOccasionReminder(
+  contactId: string,
+  contactName: string,
+  occasionType: string,
+  month: number,
+  day: number,
+  advanceDays: number = 3,
+  triggerHour: number = 9
+): Promise<string> {
+  const today = new Date();
+  const thisYear = today.getFullYear();
+
+  let occasionDate = new Date(thisYear, month - 1, day);
+  if (occasionDate.getTime() < today.setHours(0, 0, 0, 0)) {
+    occasionDate = new Date(thisYear + 1, month - 1, day);
+  }
+
+  const reminderDate = new Date(occasionDate);
+  reminderDate.setDate(reminderDate.getDate() - advanceDays);
+  reminderDate.setHours(triggerHour, 0, 0, 0);
+
+  // Don't schedule if the reminder date is in the past
+  if (reminderDate.getTime() < Date.now()) return "";
+
+  const typeLabel = occasionType === "birthday" ? "birthday" : "special day";
+  const body =
+    advanceDays <= 1
+      ? `${contactName}'s ${typeLabel} is tomorrow — a quick message goes a long way.`
+      : `${contactName}'s ${typeLabel} is in ${advanceDays} days — a quick message goes a long way.`;
+
+  return scheduleOneTimeReminder(contactId, contactName, reminderDate, body);
+}
