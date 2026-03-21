@@ -1,10 +1,18 @@
 import { View, Text, StyleSheet, Pressable, Alert, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useRouter } from "expo-router";
+import { useState, useEffect } from "react";
 import { requestNotificationPermissions } from "@/src/utils/notifications";
+import { isSignedIn } from "@/src/utils/googleDrive";
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [driveConnected, setDriveConnected] = useState(false);
+
+  useEffect(() => {
+    isSignedIn().then(setDriveConnected);
+  }, []);
 
   const toggleNotifications = async (value: boolean) => {
     if (value) {
@@ -41,12 +49,30 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
+        <Pressable
+          style={styles.menuRow}
+          onPress={() => router.push("/backup" as any)}
+        >
+          <Text style={styles.menuEmoji}>☁️</Text>
+          <View style={styles.menuText}>
+            <Text style={styles.rowLabel}>Backup & Restore</Text>
+            <Text style={styles.rowHint}>
+              {driveConnected
+                ? "Google Drive connected"
+                : "Encrypted backup to Google Drive"}
+            </Text>
+          </View>
+          <Text style={styles.chevron}>›</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
         <Text style={styles.about}>
           Stay In Touch helps you maintain the relationships that matter most.
           All your data stays on your device.
         </Text>
-        <Text style={styles.version}>v1.0.0 — Phase 1</Text>
+        <Text style={styles.version}>v1.0.0</Text>
       </View>
     </SafeAreaView>
   );
@@ -81,6 +107,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  menuEmoji: {
+    fontSize: 22,
+    marginRight: 12,
+  },
+  menuText: {
+    flex: 1,
+  },
+  chevron: {
+    fontSize: 24,
+    color: "#CCC",
+    fontWeight: "300",
   },
   rowLabel: { fontSize: 16, fontWeight: "500", color: "#1a1a1a" },
   rowHint: { fontSize: 13, color: "#aaa", marginTop: 2 },

@@ -53,6 +53,10 @@ export default function RootLayout() {
           name="compose/[id]"
           options={{ presentation: "modal", title: "Compose" }}
         />
+        <Stack.Screen
+          name="backup"
+          options={{ presentation: "card", title: "Backup & Restore", headerShown: false }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
