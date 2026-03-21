@@ -58,7 +58,7 @@ From there you can:
 | Platform | Link |
 |----------|------|
 | Android APK | [Download latest build](https://expo.dev/accounts/d.srajan/projects/StayInTouch/builds/a878ee2f-2c62-4491-92a2-10a954746ec9) |
-| iOS | Coming soon (requires Apple Developer account) |
+| iOS (Simulator) | [Download latest build](https://expo.dev/accounts/d.srajan/projects/StayInTouch/builds/a618eb33-db29-4e78-ad9d-7feb21e335f9) |
 
 ## Building Installers
 
