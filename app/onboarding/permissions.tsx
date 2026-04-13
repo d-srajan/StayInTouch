@@ -1,19 +1,19 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Switch,
-  Platform,
-  Alert,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { useState, useMemo, useCallback } from "react";
-import { useOnboarding } from "@/src/hooks/useOnboarding";
 import { useContacts } from "@/src/hooks/useContacts";
 import { useOccasions } from "@/src/hooks/useOccasions";
+import { useOnboarding } from "@/src/hooks/useOnboarding";
 import { requestNotificationPermissions } from "@/src/utils/notifications";
+import { useRouter } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
+import {
+  Alert,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface ContactToAdd {
   id: string;
@@ -46,16 +46,17 @@ export default function PermissionsScreen() {
   const occasionsCount = contactsToAdd.filter((c) => c.birthday).length;
 
   const handleFinish = useCallback(async () => {
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      // Request notification permissions if enabled
-      if (notifications && Platform.OS !== "web") {
-        await requestNotificationPermissions();
-      }
+  try {
+    // Request notification permissions if enabled
+    if (notifications && Platform.OS !== "web") {
+      await requestNotificationPermissions();
+    }
 
-      // Add all selected contacts to the database
-      for (const contact of contactsToAdd) {
+    // Add all selected contacts to the database
+    for (const contact of contactsToAdd) {
+      try {
         const contactId = addContact({
           name: contact.name,
           phone: contact.phone,
@@ -75,24 +76,22 @@ export default function PermissionsScreen() {
             year: contact.birthday.year ?? undefined,
           });
         }
+      } catch (contactError) {
+        console.error(`Failed to add contact ${contact.name}:`, contactError);
+        // Continue with other contacts
       }
-
-      // Mark onboarding as complete — the root layout's useEffect
-      // will detect isComplete === true and redirect to /(tabs)
-      completeOnboarding();
-    } catch (e) {
-      Alert.alert("Something went wrong", "Please try again.");
-    } finally {
-      setLoading(false);
     }
-  }, [
-    notifications,
-    contactsToAdd,
-    addContact,
-    addOccasion,
-    completeOnboarding,
-    router,
-  ]);
+
+    // Mark onboarding as complete
+    completeOnboarding();
+  } catch (e) {
+    console.error('Onboarding completion error:', e);
+    Alert.alert("Something went wrong", "Please try again.");
+  } finally {
+    setLoading(false);
+  }
+}, [notifications, contactsToAdd, addContact, addOccasion, completeOnboarding]);
+
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
