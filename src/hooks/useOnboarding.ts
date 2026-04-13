@@ -11,6 +11,7 @@ let webPrefs: Record<string, string> = {};
 
 // ── Global state shared across all hook instances ──
 let globalIsComplete: boolean | null = null;
+let initAttempted = false;
 const listeners = new Set<(value: boolean) => void>();
 
 function notifyAll(value: boolean) {
@@ -31,7 +32,7 @@ export function useOnboarding() {
     };
   }, []);
 
-  // Initial check (only runs once globally)
+  // Initial check — retries if db wasn't ready on first attempt
   useEffect(() => {
     if (globalIsComplete !== null) {
       setIsComplete(globalIsComplete);
@@ -43,20 +44,35 @@ export function useOnboarding() {
       notifyAll(val);
       return;
     }
-    if (!db) {
-      notifyAll(false);
-      return;
+
+    function tryInit() {
+      if (globalIsComplete !== null) return; // already resolved
+
+      if (!db) {
+        // DB not ready yet — if this is first attempt, retry after a short delay
+        if (!initAttempted) {
+          initAttempted = true;
+          setTimeout(tryInit, 200);
+        } else {
+          // DB truly unavailable after retry — default to not complete
+          notifyAll(false);
+        }
+        return;
+      }
+
+      try {
+        const rows = db
+          .select()
+          .from(userPrefs)
+          .where(eq(userPrefs.key, ONBOARDING_KEY))
+          .all();
+        notifyAll(rows.length > 0 && rows[0].value === "true");
+      } catch {
+        notifyAll(false);
+      }
     }
-    try {
-      const rows = db
-        .select()
-        .from(userPrefs)
-        .where(eq(userPrefs.key, ONBOARDING_KEY))
-        .all();
-      notifyAll(rows.length > 0 && rows[0].value === "true");
-    } catch {
-      notifyAll(false);
-    }
+
+    tryInit();
   }, [isWeb]);
 
   const completeOnboarding = useCallback(() => {

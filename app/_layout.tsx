@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -18,6 +18,7 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const { isComplete } = useOnboarding();
+  const isNavigating = useRef(false);
 
   useEffect(() => {
     runMigrations();
@@ -26,15 +27,19 @@ export default function RootLayout() {
   // Redirect based on onboarding state
   useEffect(() => {
     if (isComplete === null) return; // still loading
+    if (isNavigating.current) return; // already navigating, don't fight
 
     const inOnboarding = segments[0] === ("onboarding" as string);
 
     if (!isComplete && !inOnboarding) {
-      // Not onboarded yet — send to onboarding
+      isNavigating.current = true;
       router.replace("/onboarding" as any);
+      // Reset after navigation settles
+      setTimeout(() => { isNavigating.current = false; }, 500);
     } else if (isComplete && inOnboarding) {
-      // Already onboarded — go to main app
+      isNavigating.current = true;
       router.replace("/(tabs)");
+      setTimeout(() => { isNavigating.current = false; }, 500);
     }
   }, [isComplete, segments, router]);
 

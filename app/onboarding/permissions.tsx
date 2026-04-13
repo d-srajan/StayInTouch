@@ -46,51 +46,55 @@ export default function PermissionsScreen() {
   const occasionsCount = contactsToAdd.filter((c) => c.birthday).length;
 
   const handleFinish = useCallback(async () => {
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    // Request notification permissions if enabled
-    if (notifications && Platform.OS !== "web") {
-      await requestNotificationPermissions();
-    }
-
-    // Add all selected contacts to the database
-    for (const contact of contactsToAdd) {
-      try {
-        const contactId = addContact({
-          name: contact.name,
-          phone: contact.phone,
-          email: contact.email,
-          thresholdDays: contact.thresholdDays ?? 21,
-        });
-
-        // If they have a birthday, add it as an occasion
-        if (contact.birthday && contactId) {
-          addOccasion({
-            contactId,
-            contactName: contact.name,
-            type: "birthday",
-            label: `${contact.name}'s birthday`,
-            month: contact.birthday.month,
-            day: contact.birthday.day,
-            year: contact.birthday.year ?? undefined,
-          });
-        }
-      } catch (contactError) {
-        console.error(`Failed to add contact ${contact.name}:`, contactError);
-        // Continue with other contacts
+    try {
+      // Request notification permissions if enabled
+      if (notifications && Platform.OS !== "web") {
+        await requestNotificationPermissions();
       }
-    }
 
-    // Mark onboarding as complete
-    completeOnboarding();
-  } catch (e) {
-    console.error('Onboarding completion error:', e);
-    Alert.alert("Something went wrong", "Please try again.");
-  } finally {
-    setLoading(false);
-  }
-}, [notifications, contactsToAdd, addContact, addOccasion, completeOnboarding]);
+      // Add all selected contacts to the database
+      for (const contact of contactsToAdd) {
+        try {
+          const contactId = addContact({
+            name: contact.name,
+            phone: contact.phone,
+            email: contact.email,
+            thresholdDays: contact.thresholdDays ?? 21,
+          });
+
+          // If they have a birthday, add it as an occasion
+          if (contact.birthday && contactId) {
+            addOccasion({
+              contactId,
+              contactName: contact.name,
+              type: "birthday",
+              label: `${contact.name}'s birthday`,
+              month: contact.birthday.month,
+              day: contact.birthday.day,
+              year: contact.birthday.year ?? undefined,
+            });
+          }
+        } catch (contactError) {
+          console.error(`Failed to add contact ${contact.name}:`, contactError);
+        }
+      }
+
+      // Mark onboarding as complete
+      completeOnboarding();
+
+      // Explicitly navigate to tabs — don't rely solely on the layout effect
+      // which can miss the state change if segments haven't re-evaluated yet
+      setTimeout(() => {
+        router.replace("/(tabs)" as any);
+      }, 100);
+    } catch (e) {
+      console.error('Onboarding completion error:', e);
+      setLoading(false);
+      Alert.alert("Something went wrong", "Please try again.");
+    }
+  }, [notifications, contactsToAdd, addContact, addOccasion, completeOnboarding, router]);
 
 
   return (
