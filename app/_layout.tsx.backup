@@ -7,7 +7,6 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { runMigrations } from "@/src/db/migrate";
 import { useOnboarding } from "@/src/hooks/useOnboarding";
-import { ErrorBoundary } from "@/src/components/ErrorBoundary";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -39,29 +38,27 @@ export default function RootLayout() {
   }, [isComplete, segments, router]);
 
   return (
-    <ErrorBoundary>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="onboarding"
-            options={{ headerShown: false, gestureEnabled: false }}
-          />
-          <Stack.Screen
-            name="contact/[id]"
-            options={{ presentation: "card", title: "" }}
-          />
-          <Stack.Screen
-            name="compose/[id]"
-            options={{ presentation: "modal", title: "Compose" }}
-          />
-          <Stack.Screen
-            name="backup"
-            options={{ presentation: "card", title: "Backup & Restore", headerShown: false }}
-          />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </ErrorBoundary>
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="onboarding"
+          options={{ headerShown: false, gestureEnabled: false }}
+        />
+        <Stack.Screen
+          name="contact/[id]"
+          options={{ presentation: "card", title: "" }}
+        />
+        <Stack.Screen
+          name="compose/[id]"
+          options={{ presentation: "modal", title: "Compose" }}
+        />
+        <Stack.Screen
+          name="backup"
+          options={{ presentation: "card", title: "Backup & Restore", headerShown: false }}
+        />
+      </Stack>
+      <StatusBar style="auto" />
+    </ThemeProvider>
   );
 }
